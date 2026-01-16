@@ -1,12 +1,7 @@
 
 # ------------------------------------------------------------
-# Web Scraper: Élections Montréal 2025 Candidate Profiles (N = 421, FR Output)
-# Developed by Alan Nemirovski
-#
-# Final output: Two-column .csv file with candidate (full) names and with the complete text scraped from 
-#               each candidate's profile page (unsorted)
-#
-# Attribution: This scraper was developed using Microsoft Copilot (with Enterprise protections)
+# Web Scraper : Profils des candidats aux élections municipales de Montréal 2025 (N = 421, Contenu FR)
+# Code écrit par Alan Nemirovski avec l'aide de Microsoft Copilot
 # ------------------------------------------------------------
 
 library(rvest)
@@ -23,7 +18,7 @@ library(tibble)
 has_memoise <- requireNamespace("memoise", quietly = TRUE)
 if (has_memoise) library(memoise)
 
-# --- Initial configurations ---
+# --- Configurations initiales ---
 
 BASE_INDEX <- "https://elections.montreal.ca/fr/repertoire-des-candidats/"
 DOMAIN     <- "https://elections.montreal.ca"
@@ -47,7 +42,7 @@ TOTAL_PAGES       <- 15 # confirm total number of pages on website
 dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
 log_msg <- function(...) if (VERBOSE) message(...)
 
-# --- Sessions and headers ---
+# --- Sessions et en-têtes ---
 
 SESSION <- httr::handle(DOMAIN)
 make_headers <- function(referer) {
@@ -81,7 +76,7 @@ is_allowed <- function(url) {
   } else out
 }
 
-# --- Robust GET with jitter + RETRY + Retry-After ---
+# --- GET robuste avec jitter + RETRY + Retry-After ---
 
 safe_GET <- function(url, pause = 1.0, referer = BASE_INDEX, times = RETRY_TIMES,
                      pause_min = RETRY_PAUSEMIN, pause_cap = RETRY_PAUSECAP) {
@@ -136,7 +131,7 @@ read_html_safe <- function(url, pause = 1.0, referer = BASE_INDEX) {
   tryCatch(read_html(resp), error = function(e) NULL)
 }
 
-# --- Candidate link discovery (CSS + raw-HTML fallback) ---
+# --- Découverte de liens candidats (CSS + repli vers HTML brut) ---
 
 rx_is_candidate <- paste0("^", DOMAIN, "/fr/candidates/[^/]+/?$")
 
@@ -162,7 +157,7 @@ extract_candidate_links <- function(doc, base_url) {
   unique(links)
 }
 
-# --- Build index URLs with PATH pagination (1..15) ---
+# --- Créer des URL d'index avec pagination PATH (1 à 15) ---
 
 index_urls <- c(
   BASE_INDEX,
@@ -186,11 +181,11 @@ if (!length(candidate_urls)) {
   stop("No candidate URLs were collected. Raise PAUSE_* or check connectivity.")
 }
 
-# --- Minimal parser: ONLY sections_raw + texte_complete ---
+# --- Minimal parser: ONLY cand_name + complete_text ---
 
 parse_candidate_page <- function(url) {
   doc <- read_html_safe(url, pause = PAUSE_PROFILE, referer = BASE_INDEX)
-  if (is.null(doc)) return(tibble(sections_raw = NA_character_, texte_complete = NA_character_))
+  if (is.null(doc)) return(tibble(cand_name = NA_character_, complete_text = NA_character_))
   main <- doc %>% html_element("main"); if (is.null(main)) main <- doc
   
   h2s    <- main %>% html_elements("h2")
@@ -204,18 +199,18 @@ parse_candidate_page <- function(url) {
   )
   if (any(is_prompt, na.rm = TRUE)) titles <- titles[is_prompt]
   
-  sections_raw   <- if (length(titles)) paste(titles, collapse = " || ") else NA_character_
-  texte_complete <- main %>% html_text2() %>% str_squish()
+  cand_name   <- if (length(titles)) paste(titles, collapse = " || ") else NA_character_
+  complete_text <- main %>% html_text2() %>% str_squish()
   
-  tibble(sections_raw = sections_raw, texte_complete = texte_complete)
+  tibble(cand_name = cand_name, complete_text = complete_text)
 }
 
-# --- Safe mapping and bind ---
+# --- Analyseur minimal : UNIQUEMENT cand_name + complete_text ---
 
 message("Fetching ", length(candidate_urls), " profiles ...")
 safe_parse <- purrr::safely(
   parse_candidate_page,
-  otherwise = tibble(sections_raw = NA_character_, texte_complete = NA_character_),
+  otherwise = tibble(cand_name = NA_character_, complete_text = NA_character_),
   quiet = FALSE
 )
 chunks  <- purrr::map(candidate_urls, ~ safe_parse(.x))
@@ -224,13 +219,13 @@ errs <- purrr::keep(chunks, ~ !is.null(.x$error))
 if (length(errs)) { message("Some profiles failed to parse. First error shown:"); print(errs[[1]]$error) }
 
 results <- dplyr::bind_rows(purrr::map(chunks, "result")) %>%
-  select(sections_raw, texte_complete)
+  select(cand_name, complete_text)
 
-# Sanity check: exactly two columns, no blank names
+# Vérification de cohérence : exactement deux colonnes, aucun nom vide
 stopifnot(identical(names(results), c("cand_name", "complete_text")))
 stopifnot(all(nzchar(names(results))))
 
-# --- Save output to .csv file ---
+# --- Enregistrer la sortie dans un fichier .csv ---
 
 write_csv(results, OUT_CSV, na = "")
 message("Saved: ", OUT_CSV)
