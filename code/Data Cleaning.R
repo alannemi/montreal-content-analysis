@@ -51,7 +51,7 @@ cands.data.clean <- cands.data.clean |>
 
 role_markers <- c("Mairesse", "Conseillère")
 district_markers <- c("de ville", "de l'arrondissement", "d'arrondissement", "l'arrondissement")
-contact_terms <- c("courriel", "linkedin", "facebook", "instagram", "twitter", "X", "x")
+contact_terms <- c("courriel", "linkedin", "facebook", "instagram", "twitter", "site", "x")
 
 role.pat <- paste0("\\b(", paste(role_markers, collapse = "|"), ")\\b")
 district.pat <- paste(district_markers, collapse = "|")
@@ -69,8 +69,12 @@ cands.data.clean[cands.data.clean == "Non disponible"] <- NA
 cands.data.clean[cands.data.clean == ""] <- NA
 
 
-# --- Sélection des colonnes d'intérêt ---
+# --- Sélection des colonnes d'intérêt et nettoyage final ---
 
 cands.data.clean <- cands.data.clean |> 
-  select(cand.name, role, district, presentation, motivation, comment.ameliorer.mtl, prioritees, lieu.prefere) 
-  
+  select(cand.name, role, district, party, presentation, motivation, comment.ameliorer.mtl, prioritees, lieu.prefere) |> 
+  mutate(role = case_when(is.na(district) ~ "Mairesse ou maire de la ville", TRUE ~ role),
+         role = case_when(role == "Mairesse ou maire" ~ "Mairesse ou maire de l'arrondissement", TRUE ~ role),
+         role = as.factor(role),
+         district = as.factor(district),
+         party = as.factor(party))
