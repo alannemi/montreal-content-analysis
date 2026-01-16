@@ -65,7 +65,7 @@ cands.data.clean <- cands.data.clean |>
          district = str_trim(str_remove(district, paste0("(?i)\\b(", contact.pat, ")\\b.*$"))),
          role = str_trim(str_remove(role.info, paste0("(?i)\\s+(", district.pat, ").*$"))))
 
-# --- Sélection des colonnes d'intérêt dans les données de travail finales ---
+# --- Sélection des colonnes d'intérêt ---
 
 cands.data.clean <- cands.data.clean |> 
   select(cand.name, role, district, presentation, motivation, comment.ameliorer.mtl, prioritees, lieu.prefere) 
