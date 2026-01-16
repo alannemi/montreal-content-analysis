@@ -24,7 +24,7 @@ footer <- "Élections Montréal est un organisme neutre et non partisan"
 cands.data.clean <- cands.data %>%
   mutate(header = str_extract(complete_text, paste0("^.*?(?=", questions[1], ")")),
          answers = str_extract(complete_text, paste0("(?=", questions[1], ").*?(?=", footer, ")")),
-         footer_block = str_extract(complete_text, paste0(footer, ".*$")))
+         footer = str_extract(complete_text, paste0(footer, ".*$")))
 
 
 extract_section <- function(text, start, end = NULL) {
