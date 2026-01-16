@@ -23,11 +23,11 @@ if (has_memoise) library(memoise)
 BASE_INDEX <- "https://elections.montreal.ca/fr/repertoire-des-candidats/"
 DOMAIN     <- "https://elections.montreal.ca"
 
-# Enter researcher name and email below
+# Entrer nom et courriel du chercheur
 UA_STRING  <- "FirstnameLastname-ResearchBot/2.0 (+mailto:youremail@example.com) R/rvest"
 
 OUT_DIR <- "data"
-OUT_CSV <- file.path(OUT_DIR, "mtlcandidates2025_textdata_RAW.csv")  # only two columns
+OUT_CSV <- file.path(OUT_DIR, "mtlcandidates2025_textdata_RAW.csv")
 
 VERBOSE <- TRUE
 PAUSE_DIR      <- 2.2
@@ -37,7 +37,7 @@ RETRY_PAUSEMIN <- 2
 RETRY_PAUSECAP <- 20
 
 SILENCE_ROBOTSTXT <- TRUE
-TOTAL_PAGES       <- 15 # confirm total number of pages on website
+TOTAL_PAGES       <- 15 # veuillez confirmer le nombre de pages total avant
 
 dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
 log_msg <- function(...) if (VERBOSE) message(...)
@@ -46,15 +46,13 @@ log_msg <- function(...) if (VERBOSE) message(...)
 
 SESSION <- httr::handle(DOMAIN)
 make_headers <- function(referer) {
-  c(
-    "Accept"          = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  c("Accept" = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language" = "fr-CA,fr;q=0.9,en;q=0.8",
-    "Cache-Control"   = "no-cache",
-    "Pragma"          = "no-cache",
-    "Connection"      = "keep-alive",
-    "DNT"             = "1",
-    "Referer"         = referer
-  )
+    "Cache-Control" = "no-cache",
+    "Pragma" = "no-cache",
+    "Connection" = "keep-alive",
+    "DNT"  = "1",
+    "Referer" = referer)
 }
 
 # --- robots.txt ---
@@ -90,9 +88,9 @@ safe_GET <- function(url, pause = 1.0, referer = BASE_INDEX, times = RETRY_TIMES
   resp <- tryCatch(
     httr::RETRY(
       "GET", url,
-      times        = times,
-      pause_min    = pause_min,
-      pause_cap    = pause_cap,
+      times = times,
+      pause_min = pause_min,
+      pause_cap = pause_cap,
       terminate_on = c(404),
       httr::user_agent(UA_STRING),
       httr::add_headers(.headers = make_headers(referer)),
@@ -159,10 +157,8 @@ extract_candidate_links <- function(doc, base_url) {
 
 # --- Créer des URL d'index avec pagination PATH (1 à 15) ---
 
-index_urls <- c(
-  BASE_INDEX,
-  paste0(BASE_INDEX, "page/", 2:TOTAL_PAGES, "/")   # <-- key change
-)
+index_urls <- c(BASE_INDEX, 
+                paste0(BASE_INDEX, "page/", 2:TOTAL_PAGES, "/"))
 
 candidate_urls <- character()
 for (u in index_urls) {
