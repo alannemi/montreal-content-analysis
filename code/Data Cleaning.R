@@ -50,7 +50,7 @@ cands.data.clean <- cands.data.clean |>
 # --- Enregistrement des données des candidats dans des colonnes distinctes --- 
 
 role_markers <- c("Mairesse", "Conseillère")
-district_markers <- c("ville", "d'arrondissement", "l'arrondissement")
+district_markers <- c("de ville", "de l'arrondissement", "d'arrondissement", "l'arrondissement")
 contact_terms <- c("courriel", "linkedin", "facebook", "instagram", "twitter", "X", "x")
 
 role.pat <- paste0("\\b(", paste(role_markers, collapse = "|"), ")\\b")
@@ -65,9 +65,12 @@ cands.data.clean <- cands.data.clean |>
          district = str_trim(str_remove(district, paste0("(?i)\\b(", contact.pat, ")\\b.*$"))),
          role = str_trim(str_remove(role.info, paste0("(?i)\\s+(", district.pat, ").*$"))))
 
+cands.data.clean[cands.data.clean == "Non disponible"] <- NA
+cands.data.clean[cands.data.clean == ""] <- NA
+
+
 # --- Sélection des colonnes d'intérêt ---
 
 cands.data.clean <- cands.data.clean |> 
   select(cand.name, role, district, presentation, motivation, comment.ameliorer.mtl, prioritees, lieu.prefere) 
   
-
